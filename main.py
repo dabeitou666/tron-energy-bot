@@ -132,3 +132,34 @@ if __name__ == "__main__":
         asyncio.run(main_loop())
     except Exception as e:
         print(f"[主循环崩溃] 错误信息：{e}")
+
+from aiohttp import web
+import asyncio
+
+async def handle(request):
+    return web.Response(text="OK")
+
+async def start_web_server():
+    app = web.Application()
+    app.add_routes([web.get('/', handle)])
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8080)
+    await site.start()
+
+async def main_loop():
+    # 启动http服务器和监控任务并行
+    await start_web_server()
+    print("启动监控...")
+    while True:
+        for address in MONITORED_ADDRESSES:
+            tx = fetch_latest_incoming_tx(address)
+            if tx:
+                await parse_and_send_report(tx, address)
+        await asyncio.sleep(15)
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main_loop())
+    except Exception as e:
+        print(f"[主循环崩溃] 错误信息：{e}")
